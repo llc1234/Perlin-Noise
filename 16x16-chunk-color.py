@@ -99,11 +99,15 @@ def draw_chunk(screen, chunk, chunk_x, chunk_y):
             value = chunk[dy][dx]
             #color = (255, 255, 255) if value > 45 else (0, 0, 0)
 
-            if value < 30:
-                color = (100, 100, 100)
+            if value < 25:
+                color = (90, 90, 90)
+            elif value < 30:
+                color = (120, 120, 120)
             elif value < 35:
-                color = (200, 200, 200)
+                color = (190, 190, 190)
             elif value < 40:
+                color = (220, 220, 220)
+            elif value < 45:
                 color = (255, 255, 255)
             else:
                 color = (0, 0, 0)
