@@ -1,10 +1,9 @@
 from PIL import Image
-import numpy as np
 import random
 
 
 # --- Settings ---
-WIDTH, HEIGHT = 300, 300
+WIDTH, HEIGHT = 500, 500
 SCALE = 100.0
 OCTAVES = 6
 PERSISTENCE = 0.5
@@ -13,7 +12,10 @@ LACUNARITY = 2.0
 SEED = random.randint(10, 10000)
 CHUNK_SIZE = 16
 
+random.seed(SEED)
+
 # --- Custom Perlin Noise Implementation ---
+
 def fade(t):
     return t * t * t * (t * (t * 6 - 15) + 10)
 
@@ -27,10 +29,9 @@ def grad(hash, x, y):
     return (u if h & 1 == 0 else -u) + (v if h & 2 == 0 else -v)
 
 # Initialize permutation table with seed
-p = np.arange(256, dtype=int)
-np.random.seed(SEED)
-np.random.shuffle(p)
-p = np.stack([p, p]).flatten()
+p = list(range(256))
+random.shuffle(p)
+p = p * 2  # duplicate list
 
 def perlin(x, y):
     xi = int(x) & 255
@@ -53,8 +54,12 @@ def perlin(x, y):
     return (lerp(x1, x2, v) + 1) / 2  # Normalize to [0, 1]
 
 # --- Chunk Generation ---
+
+def clamp(value, min_val, max_val):
+    return max(min_val, min(value, max_val))
+
 def generate_chunk(chunk_x, chunk_y, chunk_size, width, height, scale, octaves, persistence, lacunarity):
-    noise_chunk = np.zeros((chunk_size, chunk_size), dtype=np.uint8)
+    noise_chunk = [[0 for _ in range(chunk_size)] for _ in range(chunk_size)]
 
     for dy in range(chunk_size):
         for dx in range(chunk_size):
@@ -79,21 +84,21 @@ def generate_chunk(chunk_x, chunk_y, chunk_size, width, height, scale, octaves, 
                 frequency *= lacunarity
 
             value = int(noise_height / octaves * 255)
-            noise_chunk[dy][dx] = np.clip(value, 0, 255)
+            noise_chunk[dy][dx] = clamp(value, 0, 255)
 
     return noise_chunk
 
-# --- Drawing to Image ---
+# --- Drawing One Chunk ---
+
 def draw_chunk(image, chunk, chunk_x, chunk_y):
-    for dy in range(chunk.shape[0]):
-        for dx in range(chunk.shape[1]):
+    for dy in range(len(chunk)):
+        for dx in range(len(chunk[0])):
             x = chunk_x + dx
             y = chunk_y + dy
             if x >= WIDTH or y >= HEIGHT:
                 continue
             value = chunk[dy][dx]
 
-            # Simple grayscale mapping
             if value < 25:
                 color = (90, 90, 90)
             elif value < 30:
@@ -105,11 +110,12 @@ def draw_chunk(image, chunk, chunk_x, chunk_y):
             elif value < 45:
                 color = (255, 255, 255)
             else:
-                color = (100, 100, 233)
+                color = (0, 0, 0)
 
             image.putpixel((x, y), color)
 
 # --- Main ---
+
 def main():
     image = Image.new("RGB", (WIDTH, HEIGHT))
 
