@@ -11,7 +11,7 @@ LACUNARITY = 2.0
 
 SEED = random.randint(10, 10000)  # Map Seed
 
-CHUNK_SIZE = 50
+CHUNK_SIZE = 16
 random.seed(SEED)
 
 # --- Custom Perlin Noise Implementation ---
