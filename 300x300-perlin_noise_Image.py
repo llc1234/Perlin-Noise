@@ -3,7 +3,7 @@ import random
 
 
 # --- Settings ---
-WIDTH, HEIGHT = 500, 500
+WIDTH, HEIGHT = 300, 300
 SCALE = 100.0
 OCTAVES = 6
 PERSISTENCE = 0.5
