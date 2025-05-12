@@ -1,5 +1,4 @@
 import pygame
-import numpy as np
 import random
 
 
@@ -12,8 +11,8 @@ LACUNARITY = 2.0
 
 SEED = random.randint(10, 10000)  # Map Seed
 
-
-CHUNK_SIZE = 16
+CHUNK_SIZE = 50
+random.seed(SEED)
 
 # --- Custom Perlin Noise Implementation ---
 
@@ -30,10 +29,9 @@ def grad(hash, x, y):
     return (u if h & 1 == 0 else -u) + (v if h & 2 == 0 else -v)
 
 # Initialize permutation table with seed
-p = np.arange(256, dtype=int)
-np.random.seed(SEED)
-np.random.shuffle(p)
-p = np.stack([p, p]).flatten()
+p = list(range(256))
+random.shuffle(p)
+p = p * 2  # duplicate list
 
 def perlin(x, y):
     xi = int(x) & 255
@@ -57,8 +55,11 @@ def perlin(x, y):
 
 # --- Chunk Generation ---
 
+def clamp(value, min_val, max_val):
+    return max(min_val, min(value, max_val))
+
 def generate_chunk(chunk_x, chunk_y, chunk_size, width, height, scale, octaves, persistence, lacunarity):
-    noise_chunk = np.zeros((chunk_size, chunk_size), dtype=np.uint8)
+    noise_chunk = [[0 for _ in range(chunk_size)] for _ in range(chunk_size)]
 
     for dy in range(chunk_size):
         for dx in range(chunk_size):
@@ -83,21 +84,20 @@ def generate_chunk(chunk_x, chunk_y, chunk_size, width, height, scale, octaves, 
                 frequency *= lacunarity
 
             value = int(noise_height / octaves * 255)
-            noise_chunk[dy][dx] = np.clip(value, 0, 255)
-    
+            noise_chunk[dy][dx] = clamp(value, 0, 255)
+
     return noise_chunk
 
 # --- Drawing One Chunk ---
 
 def draw_chunk(screen, chunk, chunk_x, chunk_y):
-    for dy in range(chunk.shape[0]):
-        for dx in range(chunk.shape[1]):
+    for dy in range(len(chunk)):
+        for dx in range(len(chunk[0])):
             x = chunk_x + dx
             y = chunk_y + dy
             if x >= WIDTH or y >= HEIGHT:
                 continue
             value = chunk[dy][dx]
-            #color = (255, 255, 255) if value > 45 else (0, 0, 0)
 
             if value < 25:
                 color = (90, 90, 90)
@@ -111,7 +111,6 @@ def draw_chunk(screen, chunk, chunk_x, chunk_y):
                 color = (255, 255, 255)
             else:
                 color = (0, 0, 0)
-            # color = (value, value, value)
             screen.set_at((x, y), color)
 
 # --- Main ---
@@ -121,21 +120,17 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption(f"Chunked Perlin Noise Map (Seed: {SEED})")
 
-    # Generate and draw in 16x16 chunks
-
     for y in range(0, HEIGHT, CHUNK_SIZE):
         for x in range(0, WIDTH, CHUNK_SIZE):
             chunk = generate_chunk(x, y, CHUNK_SIZE, WIDTH, HEIGHT, SCALE, OCTAVES, PERSISTENCE, LACUNARITY)
             draw_chunk(screen, chunk, x, y)
             pygame.display.update(pygame.Rect(x, y, CHUNK_SIZE, CHUNK_SIZE))  # optional: only update the chunk
-        
 
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
 
     pygame.quit()
 
